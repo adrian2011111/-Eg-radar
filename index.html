@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Egg Radar</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:#070a12;
+  color:white;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+}
+
+header{
+  text-align:center;
+  padding:22px 15px 12px;
+}
+
+h1{
+  margin:0;
+  font-size:30px;
+}
+
+.sub{
+  color:#9ca3af;
+  margin-top:5px;
+}
+
+.wrap{
+  width:min(600px,100%);
+  margin:auto;
+  padding:15px;
+}
+
+.radar{
+  width:290px;
+  height:290px;
+  margin:18px auto;
+  border-radius:50%;
+  position:relative;
+  overflow:hidden;
+  border:2px solid #00ff99;
+  background:
+    radial-gradient(circle,
+      transparent 0 25%,
+      rgba(0,255,153,.18) 26% 27%,
+      transparent 28% 47%,
+      rgba(0,255,153,.18) 48% 49%,
+      transparent 50% 68%,
+      rgba(0,255,153,.18) 69% 70%,
+      transparent 71%
+    ),
+    #06150e;
+  box-shadow:0 0 30px rgba(0,255,153,.25);
+}
+
+.radar:before{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:50%;
+  height:2px;
+  background:#00ff99;
+  transform-origin:left center;
+  animation:scan 3s linear infinite;
+}
+
+.radar:after{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:0;
+  width:2px;
+  height:100%;
+  background:rgba(0,255,153,.25);
+}
+
+@keyframes scan{
+  from{transform:rotate(0)}
+  to{transform:rotate(360deg)}
+}
+
+.controls{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+
+button,select{
+  width:100%;
+  min-height:46px;
+  border:1px solid #273244;
+  border-radius:12px;
+  background:#111827;
+  color:white;
+  font-size:15px;
+  padding:10px;
+}
+
+.refresh{
+  margin-top:10px;
+  background:#00b875;
+  border:0;
+  font-weight:700;
+}
+
+.status{
+  text-align:center;
+  margin:14px 0;
+  color:#9ca3af;
+  font-size:14px;
+}
+
+.server{
+  background:#111827;
+  border:1px solid #273244;
+  border-radius:16px;
+  padding:15px;
+  margin:12px 0;
+}
+
+.serverTop{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+}
+
+.serverName{
+  font-weight:700;
+  font-size:17px;
+}
+
+.online{
+  color:#22c55e;
+  white-space:nowrap;
+  font-size:13px;
+}
+
+.info{
+  color:#cbd5e1;
+  line-height:1.8;
+  margin-top:9px;
+}
+
+.unknown{
+  color:#fbbf24;
+}
+
+.join{
+  margin-top:12px;
+  background:#2563eb;
+  border:0;
+  font-weight:700;
+}
+
+.empty{
+  text-align:center;
+  color:#9ca3af;
+  padding:25px 10px;
+}
+
+.note{
+  color:#6b7280;
+  text-align:center;
+  font-size:12px;
+  line-height:1.5;
+  margin:20px 5px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>🥚 Egg Radar</h1>
+  <div class="sub">Roba un Huevo • Servidores reales</div>
+</header>
+
+<div class="wrap">
+
+  <div class="radar"></div>
+
+  <div class="controls">
+
+    <select id="size">
+      <option value="huge">Tamaño: Enormes</option>
+      <option value="all">Tamaño: Todos</option>
+    </select>
+
+    <select id="rarity">
+      <option value="all">Rareza: Todos</option>
+      <option value="divine">Divinos</option>
+      <option value="legendary">Legendarios</option>
+    </select>
+
+  </div>
+
+  <button class="refresh" onclick="loadServers()">
+    🔄 Buscar servidores reales
+  </button>
+
+  <div id="status" class="status">
+    Pulsa el botón para buscar servidores.
+  </div>
+
+  <div id="servers"></div>
+
+  <div class="note">
+    Los servidores mostrados proceden de la información pública de Roblox.
+    <br><br>
+    ⚠️ Roblox no proporciona mediante esta lista pública la ubicación
+    de los huevos dentro de cada servidor. Por eso no se muestran
+    huevos inventados.
+  </div>
+
+</div>
+
+<script>
+
+const PLACE_ID = "107778070777162";
+
+const API =
+  "https://games.roblox.com/v1/games/" +
+  PLACE_ID +
+  "/servers/Public";
+
+let cursor = "";
+
+async function loadServers(){
+
+  const status = document.getElementById("status");
+  const box = document.getElementById("servers");
+
+  status.textContent = "🔄 Buscando servidores reales...";
+  box.innerHTML = "";
+
+  cursor = "";
+
+  try{
+
+    const url =
+      API +
+      "?sortOrder=2" +
+      "&excludeFullGames=true" +
+      "&limit=20";
+
+    const response = await fetch(url);
+
+    if(!response.ok){
+      throw new Error("HTTP " + response.status);
+    }
+
+    const result = await response.json();
+
+    if(!result.data || result.data.length === 0){
+      box.innerHTML =
+        '<div class="empty">No hay servidores disponibles ahora.</div>';
+
+      status.textContent = "Sin servidores disponibles.";
+      return;
+    }
+
+    status.textContent =
+      "✅ " + result.data.length +
+      " servidores reales encontrados.";
+
+    result.data.forEach((server,index)=>{
+
+      const card = document.createElement("div");
+      card.className = "server";
+
+      const players = server.playing ?? 0;
+      const maxPlayers = server.maxPlayers ?? "?";
+
+      const jobId = server.id;
+
+      card.innerHTML = `
+        <div class="serverTop">
+
+          <div class="serverName">
+            Servidor #${index + 1}
+          </div>
+
+          <div class="online">
+            ● ACTIVO
+          </div>
+
+        </div>
+
+        <div class="info">
+
+          👥 Jugadores:
+          <b>${players}/${maxPlayers}</b>
+
+          <br>
+
+          🥚 Huevos enormes:
+          <span class="unknown">
+            Dato no disponible
+          </span>
+
+          <br>
+
+          ✨ Rareza:
+          <span class="unknown">
+            Dato no disponible
+          </span>
+
+          <br>
+
+          🆔 Servidor:
+          ${jobId.substring(0,12)}...
+
+        </div>
+
+        <button
+          class="join"
+          onclick="joinServer('${jobId}')">
+          🚀 Intentar entrar
+        </button>
+      `;
+
+      box.appendChild(card);
+
+    });
+
+  }catch(error){
+
+    console.error(error);
+
+    status.textContent =
+      "❌ No se pudieron cargar los servidores.";
+
+    box.innerHTML = `
+      <div class="empty">
+        Roblox no permitió obtener los servidores desde esta página.
+        <br><br>
+        Prueba nuevamente en unos segundos.
+      </div>
+    `;
+  }
+}
+
+function joinServer(jobId){
+
+  const url =
+    "https://www.roblox.com/games/start" +
+    "?placeId=" +
+    encodeURIComponent(PLACE_ID) +
+    "&gameInstanceId=" +
+    encodeURIComponent(jobId);
+
+  window.location.href = url;
+}
+
+</script>
+
+</body>
+</html>
