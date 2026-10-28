@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Egg Radar</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #080b14;
+    color: white;
+}
+
+header {
+    text-align: center;
+    padding: 20px 15px 10px;
+}
+
+h1 {
+    margin: 0;
+    font-size: 30px;
+}
+
+.subtitle {
+    color: #9ca3af;
+    margin-top: 6px;
+}
+
+.container {
+    max-width: 600px;
+    margin: auto;
+    padding: 15px;
+}
+
+/* RADAR */
+
+.radar {
+    width: 300px;
+    height: 300px;
+    margin: 20px auto;
+    border-radius: 50%;
+    position: relative;
+    overflow: hidden;
+    background:
+        radial-gradient(circle,
+        transparent 0 28%,
+        rgba(0,255,150,.18) 29% 30%,
+        transparent 31% 48%,
+        rgba(0,255,150,.18) 49% 50%,
+        transparent 51% 68%,
+        rgba(0,255,150,.18) 69% 70%,
+        transparent 71%
+        ),
+        #07140f;
+    border: 2px solid #00ff99;
+    box-shadow: 0 0 25px rgba(0,255,150,.35);
+}
+
+.radar::before {
+    content: "";
+    position: absolute;
+    width: 50%;
+    height: 2px;
+    background: #00ff99;
+    top: 50%;
+    left: 50%;
+    transform-origin: left center;
+    animation: scan 3s linear infinite;
+}
+
+.radar::after {
+    content: "";
+    position: absolute;
+    height: 100%;
+    width: 2px;
+    background: rgba(0,255,150,.25);
+    left: 50%;
+    top: 0;
+}
+
+@keyframes scan {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.egg {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    background: #ffe066;
+    border-radius: 50%;
+    box-shadow: 0 0 15px #ffe066;
+    animation: pulse 1.2s infinite;
+}
+
+@keyframes pulse {
+    50% {
+        transform: scale(1.5);
+    }
+}
+
+/* FILTERS */
+
+.filters {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+select,
+button {
+    width: 100%;
+    padding: 13px;
+    border-radius: 12px;
+    border: 1px solid #263043;
+    background: #111827;
+    color: white;
+    font-size: 15px;
+}
+
+button {
+    background: #00b875;
+    border: none;
+    font-weight: bold;
+}
+
+button:active {
+    transform: scale(.98);
+}
+
+/* SERVER */
+
+.server {
+    background: #111827;
+    border: 1px solid #263043;
+    border-radius: 16px;
+    padding: 15px;
+    margin-bottom: 12px;
+}
+
+.server-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.server-name {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.status {
+    color: #22c55e;
+    font-size: 13px;
+}
+
+.stats {
+    margin-top: 10px;
+    color: #cbd5e1;
+    line-height: 1.7;
+}
+
+.big {
+    color: #ffe066;
+    font-weight: bold;
+}
+
+.join {
+    margin-top: 12px;
+}
+
+.note {
+    text-align: center;
+    color: #9ca3af;
+    font-size: 12px;
+    margin: 18px 5px;
+}
+
+.updated {
+    text-align: center;
+    color: #22c55e;
+    font-size: 13px;
+    margin-bottom: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>🥚 Egg Radar</h1>
+    <div class="subtitle">Roba un Huevo • iPhone</div>
+</header>
+
+<div class="container">
+
+    <div class="updated" id="updated">
+        Datos de demostración
+    </div>
+
+    <div class="radar" id="radar">
+        <div class="egg" style="left:22%; top:31%;"></div>
+        <div class="egg" style="left:65%; top:25%;"></div>
+        <div class="egg" style="left:72%; top:62%;"></div>
+        <div class="egg" style="left:38%; top:70%;"></div>
+    </div>
+
+    <div class="filters">
+
+        <select id="rarity">
+            <option value="all">Rareza: Todos</option>
+            <option value="divine">Divinos</option>
+            <option value="legendary">Legendarios</option>
+            <option value="epic">Épicos</option>
+        </select>
+
+        <select id="size">
+            <option value="huge">Tamaño: Enormes</option>
+            <option value="all">Tamaño: Todos</option>
+        </select>
+
+    </div>
+
+    <button onclick="refreshRadar()">
+        🔄 Actualizar servidores
+    </button>
+
+    <br><br>
+
+    <div id="servers"></div>
+
+    <div class="note">
+        ⚠️ Esta versión utiliza datos de demostración.
+        No representa la ubicación real de huevos en Roblox.
+    </div>
+
+</div>
+
+<script>
+
+const servers = [
+
+    {
+        name: "Servidor #A91F",
+        players: "18/20",
+        huge: 4,
+        divine: 1,
+        legendary: 2
+    },
+
+    {
+        name: "Servidor #B72K",
+        players: "12/20",
+        huge: 3,
+        divine: 2,
+        legendary: 1
+    },
+
+    {
+        name: "Servidor #C54M",
+        players: "20/20",
+        huge: 2,
+        divine: 0,
+        legendary: 2
+    },
+
+    {
+        name: "Servidor #D38P",
+        players: "9/20",
+        huge: 1,
+        divine: 1,
+        legendary: 0
+    }
+];
+
+function renderServers() {
+
+    const container = document.getElementById("servers");
+
+    container.innerHTML = "";
+
+    const rarity =
+        document.getElementById("rarity").value;
+
+    let filtered = [...servers];
+
+    if (rarity === "divine") {
+        filtered = filtered.filter(s => s.divine > 0);
+    }
+
+    if (rarity === "legendary") {
+        filtered = filtered.filter(s => s.legendary > 0);
+    }
+
+    filtered.sort((a,b) => b.huge - a.huge);
+
+    filtered.forEach(server => {
+
+        const div = document.createElement("div");
+
+        div.className = "server";
+
+        div.innerHTML = `
+            <div class="server-top">
+                <div class="server-name">
+                    ${server.name}
+                </div>
+
+                <div class="status">
+                    ● ACTIVO
+                </div>
+            </div>
+
+            <div class="stats">
+
+                👥 Jugadores:
+                ${server.players}
+
+                <br>
+
+                🥚 Huevos enormes:
+                <span class="big">
+                    ${server.huge}
+                </span>
+
+                <br>
+
+                ✨ Divinos:
+                ${server.divine}
+
+                <br>
+
+                🏆 Legendarios:
+                ${server.legendary}
+
+            </div>
+
+            <button
+                class="join"
+                onclick="joinServer('${server.name}')">
+                🚀 Intentar entrar
+            </button>
+        `;
+
+        container.appendChild(div);
+    });
+}
+
+function refreshRadar() {
+
+    document.getElementById("updated").textContent =
+        "🔄 Actualizando...";
+
+    setTimeout(() => {
+
+        renderServers();
+
+        document.getElementById("updated").textContent =
+            "✅ Radar actualizado — datos de demostración";
+
+    }, 700);
+}
+
+function joinServer(name) {
+
+    alert(
+        "Servidor seleccionado: " +
+        name +
+        "\\n\\nLa conexión real al servidor se añadirá cuando tengamos el identificador público del servidor."
+    );
+}
+
+document
+    .getElementById("rarity")
+    .addEventListener("change", renderServers);
+
+document
+    .getElementById("size")
+    .addEventListener("change", renderServers);
+
+renderServers();
+
+</script>
+
+</body>
+</html>
