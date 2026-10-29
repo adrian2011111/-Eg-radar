@@ -52,8 +52,7 @@ h1{
       rgba(0,255,153,.18) 48% 49%,
       transparent 50% 68%,
       rgba(0,255,153,.18) 69% 70%,
-      transparent 71%
-    ),
+      transparent 71%),
     #06150e;
   box-shadow:0 0 30px rgba(0,255,153,.25);
 }
@@ -178,7 +177,7 @@ button,select{
 
 <header>
   <h1>🥚 Egg Radar</h1>
-  <div class="sub">Roba un Huevo • Servidores reales</div>
+  <div class="sub">Roba un Huevo • Servidores públicos</div>
 </header>
 
 <div class="wrap">
@@ -211,11 +210,10 @@ button,select{
   <div id="servers"></div>
 
   <div class="note">
-    Los servidores mostrados proceden de la información pública de Roblox.
+    Los servidores proceden de la información pública de Roblox.
     <br><br>
-    ⚠️ Roblox no proporciona mediante esta lista pública la ubicación
-    de los huevos dentro de cada servidor. Por eso no se muestran
-    huevos inventados.
+    ⚠️ La lista pública de Roblox no indica qué huevos existen
+    dentro de cada servidor. Por eso el radar no inventa huevos.
   </div>
 
 </div>
@@ -229,8 +227,6 @@ const API =
   PLACE_ID +
   "/servers/Public";
 
-let cursor = "";
-
 async function loadServers(){
 
   const status = document.getElementById("status");
@@ -238,8 +234,6 @@ async function loadServers(){
 
   status.textContent = "🔄 Buscando servidores reales...";
   box.innerHTML = "";
-
-  cursor = "";
 
   try{
 
@@ -255,29 +249,28 @@ async function loadServers(){
       throw new Error("HTTP " + response.status);
     }
 
-    const result = await response.json();
+    const data = await response.json();
 
-    if(!result.data || result.data.length === 0){
+    if(!data.data || data.data.length === 0){
+
       box.innerHTML =
-        '<div class="empty">No hay servidores disponibles ahora.</div>';
+        '<div class="empty">No se encontraron servidores disponibles.</div>';
 
-      status.textContent = "Sin servidores disponibles.";
+      status.textContent = "0 servidores encontrados.";
       return;
     }
 
     status.textContent =
-      "✅ " + result.data.length +
-      " servidores reales encontrados.";
+      "🟢 " + data.data.length + " servidores encontrados.";
 
-    result.data.forEach((server,index)=>{
-
-      const card = document.createElement("div");
-      card.className = "server";
+    data.data.forEach((server,index)=>{
 
       const players = server.playing ?? 0;
       const maxPlayers = server.maxPlayers ?? "?";
+      const id = server.id;
 
-      const jobId = server.id;
+      const card = document.createElement("div");
+      card.className = "server";
 
       card.innerHTML = `
         <div class="serverTop">
@@ -287,7 +280,7 @@ async function loadServers(){
           </div>
 
           <div class="online">
-            ● ACTIVO
+            🟢 DISPONIBLE
           </div>
 
         </div>
@@ -299,29 +292,24 @@ async function loadServers(){
 
           <br>
 
-          🥚 Huevos enormes:
+          🥚 Huevos:
           <span class="unknown">
-            Dato no disponible
+            Información no disponible
           </span>
 
           <br>
 
-          ✨ Rareza:
-          <span class="unknown">
-            Dato no disponible
-          </span>
-
-          <br>
-
-          🆔 Servidor:
-          ${jobId.substring(0,12)}...
+          📡 ID:
+          ${id.substring(0,12)}...
 
         </div>
 
         <button
           class="join"
-          onclick="joinServer('${jobId}')">
-          🚀 Intentar entrar
+          onclick="joinServer('${id}')">
+
+          🎮 Intentar entrar
+
         </button>
       `;
 
@@ -334,28 +322,34 @@ async function loadServers(){
     console.error(error);
 
     status.textContent =
-      "❌ No se pudieron cargar los servidores.";
+      "❌ No se pudo consultar Roblox.";
 
     box.innerHTML = `
       <div class="empty">
-        Roblox no permitió obtener los servidores desde esta página.
+
+        <b>No se pudieron cargar los servidores.</b>
+
         <br><br>
-        Prueba nuevamente en unos segundos.
+
+        Puede ser un bloqueo de conexión/CORS de Safari
+        o que Roblox no permita la consulta desde esta página.
+
       </div>
     `;
+
   }
+
 }
 
-function joinServer(jobId){
+function joinServer(serverId){
 
   const url =
     "https://www.roblox.com/games/start" +
-    "?placeId=" +
-    encodeURIComponent(PLACE_ID) +
-    "&gameInstanceId=" +
-    encodeURIComponent(jobId);
+    "?placeId=" + PLACE_ID +
+    "&gameInstanceId=" + encodeURIComponent(serverId);
 
   window.location.href = url;
+
 }
 
 </script>
