@@ -1,0 +1,115 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chilli Finder</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;padding:20px;background:#10151d;
+ color:white;font-family:Arial,sans-serif
+}
+main{max-width:500px;margin:auto}
+h1{text-align:center;color:#ff653b;font-size:30px}
+.sub{text-align:center;color:#bdc6d0}
+button{
+ width:100%;padding:15px;border:0;border-radius:12px;
+ background:#ff653b;color:white;font-size:16px;font-weight:bold
+}
+#estado{text-align:center;margin:20px 0}
+.card{
+ background:#202b38;border-radius:12px;
+ padding:15px;margin:12px 0
+}
+.info{color:#b9c4d0;font-size:13px;line-height:1.5}
+.join{
+ display:block;text-align:center;text-decoration:none;
+ background:#287d50;color:white;padding:12px;
+ border-radius:9px;margin-top:12px
+}
+</style>
+</head>
+<body>
+<main>
+<h1>🌶️ Chilli Finder</h1>
+<p class="sub">Roba un Huevo · Servidores públicos</p>
+
+<button onclick="buscar()">🔄 BUSCAR SERVIDORES</button>
+<p id="estado">Pulsa el botón para buscar.</p>
+<div id="lista"></div>
+
+<p class="info">
+Se muestran servidores públicos reales de Roblox.
+La lista pública no informa dónde aparecen los Chillis
+o huevos enormes. No se inventan ubicaciones.
+</p>
+</main>
+
+<script>
+const API="https://patient-lake-e704.adrianvazquez2087.workers.dev";
+const PLACE="107778070777162";
+
+async function buscar(){
+ const estado=document.getElementById("estado");
+ const lista=document.getElementById("lista");
+
+ estado.textContent="Buscando servidores...";
+ lista.innerHTML="";
+
+ try{
+  const respuesta=await fetch(API);
+
+  if(!respuesta.ok){
+   throw new Error("Error HTTP "+respuesta.status);
+  }
+
+  const datos=await respuesta.json();
+
+  if(!Array.isArray(datos.data)){
+   throw new Error("Respuesta de Roblox no válida");
+  }
+
+  if(datos.data.length===0){
+   estado.textContent="No hay servidores disponibles.";
+   return;
+  }
+
+  estado.textContent=datos.data.length+" servidores encontrados";
+
+  datos.data.forEach((servidor)=>{
+   const tarjeta=document.createElement("div");
+   tarjeta.className="card";
+
+   const jugadores=document.createElement("p");
+   jugadores.textContent="👥 Jugadores: "+
+    servidor.playing+" / "+servidor.maxPlayers;
+
+   const id=document.createElement("p");
+   id.className="info";
+   id.textContent="Servidor: "+servidor.id;
+
+   const entrar=document.createElement("a");
+   entrar.className="join";
+   entrar.textContent="🎮 Abrir servidor en Roblox";
+   entrar.href="https://www.roblox.com/games/start?placeId="+
+    PLACE+"&gameInstanceId="+encodeURIComponent(servidor.id);
+
+   tarjeta.appendChild(jugadores);
+   tarjeta.appendChild(id);
+   tarjeta.appendChild(entrar);
+   lista.appendChild(tarjeta);
+  });
+
+ }catch(error){
+  estado.textContent="❌ No se pudieron consultar los servidores.";
+  const detalle=document.createElement("p");
+  detalle.className="info";
+  detalle.textContent=error.message;
+  lista.appendChild(detalle);
+ }
+}
+</script>
+</body>
+</html>
